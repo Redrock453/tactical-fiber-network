@@ -1,0 +1,83 @@
+# TFN Alert Rules
+
+alerts:
+  channels:
+    - type: "telegram"
+      enabled: false
+      bot_token_env: "TELEGRAM_TOKEN"
+      chat_id_env: "ALERT_CHAT_ID"
+    - type: "webhook"
+      enabled: false
+      url_env: "WEBHOOK_URL"
+    - type: "log"
+      enabled: true
+      path: "/var/log/tfn/alerts.log"
+
+  rules:
+    - name: "infantry_detected"
+      condition: "target == 'footstep_group' AND confidence >= 0.7"
+      severity: "medium"
+      message: "GROUP MOVEMENT detected at {position_m}m ({confidence}%)"
+      cooldown_s: 30
+      
+    - name: "armor_detected"
+      condition: "target IN ('wheeled_vehicle', 'tracked_vehicle') AND confidence >= 0.8"
+      severity: "high"
+      message: "VEHICLE detected at {position_m}m ({confidence}%)"
+      cooldown_s: 60
+      
+    - name: "artillery_fire"
+      condition: "target == 'artillery_fire'"
+      severity: "critical"
+      message: "ARTILLERY FIRE at {position_m}m!"
+      cooldown_s: 5
+      
+    - name: "explosion"
+      condition: "target == 'explosion'"
+      severity: "critical"
+      message: "EXPLOSION at {position_m}m!"
+      cooldown_s: 5
+      
+    - name: "ew_detected"
+      condition: "target == 'ew_interference' AND confidence >= 0.8"
+      severity: "high"
+      message: "EW INTERFERENCE at {position_m}m ({confidence}%)"
+      cooldown_s: 120
+      
+    - name: "link_broken"
+      condition: "event == 'link_broken'"
+      severity: "critical"
+      message: "FIBER BREAK on {link_id} at {position_m}m"
+      cooldown_s: 10
+      
+    - name: "node_offline"
+      condition: "event == 'node_offline'"
+      severity: "critical"
+      message: "NODE {node_id} OFFLINE!"
+      cooldown_s: 30
+      
+    - name: "battery_low"
+      condition: "battery_percent < 15"
+      severity: "warning"
+      message: "Node {node_id} battery: {battery_percent}% ({hours_left}h remaining)"
+      cooldown_s: 300
+      
+    - name: "trophy_intel_activity"
+      condition: "source == 'trophy' AND confidence >= 0.7"
+      severity: "high"
+      message: "ENEMY ACTIVITY at {position_m}m on trophy cable ({target})"
+      cooldown_s: 30
+
+  escalation:
+    - level: "warning"
+      after_events: 3
+      window_s: 300
+      action: "notify_operator"
+    - level: "high"
+      after_events: 5
+      window_s: 300
+      action: "notify_commander"
+    - level: "critical"
+      after_events: 1
+      window_s: 60
+      action: "notify_all"

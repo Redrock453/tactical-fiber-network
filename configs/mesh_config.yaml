@@ -1,0 +1,60 @@
+# TFN Mesh Network Configuration
+
+mesh:
+  name: "SpiderLink-Alpha"
+  protocol: "BATMAN-adv"
+  
+  routing:
+    protocol: "batman_adv"
+    hop_penalty: 30
+    aggregation: true
+    bond_mode: "balance_rr"
+    
+  interfaces:
+    - name: "bat0"
+      type: "bridge"
+      mtu: 1500
+      
+  failover:
+    enabled: true
+    detection_interval_ms: 500
+    max_retries: 3
+
+nodes:
+  default:
+    tx_power_dbm: -3.0
+    rx_sensitivity_dbm: -28.0
+    sfp_wavelength_nm: 1310
+    routing_protocol: "batman_adv"
+    
+  power:
+    battery_type: "LiFePO4"
+    voltage: 12
+    capacity_wh: 100
+    low_battery_threshold_pct: 15
+    auto_shutdown_pct: 5
+    
+  monitoring:
+    heartbeat_interval_s: 30
+    link_check_interval_s: 10
+    report_interval_s: 60
+
+fiber:
+  type: "G.657A2"
+  attenuation_1310_db_km: 0.35
+  attenuation_1550_db_km: 0.22
+  min_bend_radius_mm: 7.5
+  max_link_budget_db: 25
+  
+  splice:
+    default_method: "mechanical"
+    max_loss_per_splice_db: 0.3
+    max_splices_per_link: 5
+    
+  quality_thresholds:
+    rx_power_warning_dbm: -22
+    rx_power_critical_dbm: -25
+    snr_warning_db: 10
+    snr_critical_db: 6
+    ber_warning: 1.0e-6
+    ber_critical: 1.0e-4

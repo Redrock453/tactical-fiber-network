@@ -1,0 +1,47 @@
+name: TFN CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest numpy
+
+      - name: Lint with basic checks
+        run: |
+          python -m py_compile simulation/mesh_simulator.py
+          python -m py_compile simulation/das_simulator.py
+          python -m py_compile simulation/rf_detector.py
+          python -m py_compile calculator/fiber_budget.py
+          python -m py_compile calculator/topology_planner.py
+          python -m py_compile calculator/splice_loss_estimator.py
+          python -m py_compile analytics/signature_analyzer.py
+          python -m py_compile calculator/das_analyser.py
+
+      - name: Run tests
+        run: |
+          python -m pytest tests/ -v --tb=short
+
+      - name: Check for secrets
+        run: |
+          ! grep -rE '(ghp_|gho_|sk-|api_key.*=.*["\x27][a-zA-Z0-9])' --include="*.py" --include="*.yaml" --include="*.md" .

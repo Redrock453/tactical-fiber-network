@@ -6,9 +6,12 @@ RUN apt update && apt install -y --no-install-recommends \
     git \
     && rm -rf /var/lib/apt/lists/*
 
-COPY analytics/signature_analyzer.py /app/
-COPY theory/ /app/theory/
+COPY requirements.txt /app/
+RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir numpy streamlit pytest
 
-RUN pip install --no-cache-dir numpy
+COPY . /app/
 
-CMD ["python", "signature_analyzer.py"]
+EXPOSE 8100 8501
+
+CMD ["python", "-m", "simulation.das_simulator"]
