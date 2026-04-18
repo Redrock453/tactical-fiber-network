@@ -1,0 +1,29 @@
+cloud_service:
+  provider: "DigitalOcean"
+  droplet_size: "s-4vcpu-8gb"
+  region: "fra1"
+  image: "ubuntu-22-04-x64"
+
+processing_pipeline:
+  input: "Encrypted Fiber Stream (SFP-to-VPN)"
+  algorithms:
+    - "FFT_Fast_Fourier_Transform"
+    - "Neural_Signal_Classifier_v1.2"
+    - "RF_Phase_Anomaly_Detector"
+  alerting:
+    - "Telegram_Bot_API"
+    - "ATA_Internal_Network"
+
+storage:
+  type: "Block Storage"
+  size_gb: 100
+  backup: "daily"
+
+network:
+  vpn: "WireGuard"
+  firewall: "ufw"
+  ssl: "letsencrypt"
+
+monitoring:
+  metrics: "prometheus"
+  dashboard: "grafana"

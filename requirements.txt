@@ -1,0 +1,6 @@
+fastapi
+uvicorn
+openai
+httpx
+sse-starlette
+aiogram
