@@ -237,9 +237,7 @@ SpiderLink (TFN) is an open-source concept for deploying hidden communication ne
 
 ### Contact
 
-Developer: Vyacheslav, FPV operator / AI engineer, Ukrainian Armed Forces  
-Email: slava.tactical@proton.me  
-Telegram: @ANONYMIZED  
+Developer: FPV operator / AI engineer, Ukrainian Armed Forces  
 **April 2026**
 
 *Project is distributed under MIT license. Use at your own risk.*
