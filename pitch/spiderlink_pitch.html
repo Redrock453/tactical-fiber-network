@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SpiderLink TFN — Тактична оптоволоконна мережа</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Exo+2:wght@300;400;600;700;900&display=swap');
+  :root {
+    --green: #39ff14; --amber: #ffb300; --red: #ff3b3b;
+    --bg: #050a05; --bg2: #0a120a; --bg3: #0f1a0f;
+    --border: #1a3a1a; --text: #c8e6c9; --dim: #4a6a4a;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Exo 2', sans-serif; background: var(--bg); color: var(--text); overflow: hidden; width: 100vw; height: 100vh; }
+  body::after { content: ''; position: fixed; inset: 0; background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px); pointer-events: none; z-index: 1000; }
+  .slides { width: 100%; height: 100vh; position: relative; }
+  .slide { display: none; position: absolute; inset: 0; padding: 40px 60px; flex-direction: column; justify-content: center; animation: slideIn 0.4s ease; }
+  .slide.active { display: flex; }
+  @keyframes slideIn { from { opacity: 0; transform: translateX(30px); } to { opacity: 1; transform: translateX(0); } }
+  .topbar { position: fixed; top: 0; left: 0; right: 0; height: 48px; background: var(--bg2); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); }
+  .topbar .status { color: var(--green); }
+  .topbar .classify { color: var(--amber); border: 1px solid var(--amber); padding: 2px 10px; font-size: 10px; letter-spacing: 2px; }
+  .nav { position: fixed; bottom: 0; left: 0; right: 0; height: 56px; background: var(--bg2); border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; z-index: 100; }
+  .nav-dots { display: flex; gap: 8px; }
+  .dot { width: 8px; height: 8px; border: 1px solid var(--dim); border-radius: 50%; cursor: pointer; transition: all 0.2s; }
+  .dot.active { background: var(--green); border-color: var(--green); }
+  .nav-btn { background: none; border: 1px solid var(--border); color: var(--text); padding: 8px 28px; font-family: 'Share Tech Mono', monospace; font-size: 12px; cursor: pointer; transition: all 0.2s; letter-spacing: 1px; }
+  .nav-btn:hover { border-color: var(--green); color: var(--green); }
+  .slide-num { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--dim); }
+  .label { font-family: 'Share Tech Mono', monospace; font-size: 11px; letter-spacing: 3px; color: var(--green); margin-bottom: 12px; text-transform: uppercase; }
+  h1 { font-size: clamp(36px, 5vw, 64px); font-weight: 900; line-height: 1.05; color: #fff; margin-bottom: 16px; }
+  h1 span { color: var(--green); }
+  h2 { font-size: clamp(24px, 3vw, 38px); font-weight: 700; color: #fff; margin-bottom: 24px; }
+  h2 span { color: var(--green); }
+  .subtitle { font-size: 16px; color: var(--dim); max-width: 600px; line-height: 1.6; }
+  .accent { color: var(--green); } .warn { color: var(--amber); } .danger { color: var(--red); }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .card { background: var(--bg3); border: 1px solid var(--border); padding: 24px; position: relative; overflow: hidden; }
+  .card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--green); }
+  .card.amber::before { background: var(--amber); } .card.red::before { background: var(--red); }
+  .card-num { font-family: 'Share Tech Mono', monospace; font-size: 32px; font-weight: 700; color: var(--green); display: block; margin-bottom: 4px; }
+  .card-num.amber { color: var(--amber); }
+  .card-label { font-size: 11px; letter-spacing: 1px; color: var(--dim); text-transform: uppercase; display: block; margin-bottom: 8px; }
+  .card-desc { font-size: 13px; color: var(--text); line-height: 1.5; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { font-family: 'Share Tech Mono', monospace; font-size: 10px; letter-spacing: 2px; color: var(--dim); text-align: left; padding: 8px 12px; border-bottom: 1px solid var(--border); text-transform: uppercase; }
+  td { padding: 10px 12px; border-bottom: 1px solid rgba(26,58,26,0.5); color: var(--text); }
+  tr:last-child td { border-bottom: none; }
+  .td-green { color: var(--green); font-weight: 600; } .td-red { color: var(--red); } .td-amber { color: var(--amber); }
+  .fiber-diagram { font-family: 'Share Tech Mono', monospace; font-size: 12px; color: var(--green); line-height: 1.8; background: var(--bg2); border: 1px solid var(--border); padding: 20px 24px; white-space: pre; }
+  .big-stat { text-align: center; padding: 20px; }
+  .big-num { font-family: 'Share Tech Mono', monospace; font-size: clamp(48px, 7vw, 90px); color: var(--green); display: block; line-height: 1; margin-bottom: 8px; }
+  .big-label { font-size: 12px; letter-spacing: 2px; color: var(--dim); text-transform: uppercase; }
+  .progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .progress-label { font-size: 12px; width: 180px; color: var(--text); flex-shrink: 0; }
+  .progress-bar { flex: 1; height: 4px; background: var(--border); position: relative; }
+  .progress-fill { position: absolute; left: 0; top: 0; height: 100%; background: var(--green); transition: width 1s ease; }
+  .progress-fill.amber { background: var(--amber); }
+  .progress-val { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--dim); width: 40px; text-align: right; flex-shrink: 0; }
+  .timeline { display: flex; flex-direction: column; gap: 0; }
+  .tl-item { display: flex; gap: 20px; padding: 14px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+  .tl-item:last-child { border-bottom: none; }
+  .tl-date { font-family: 'Share Tech Mono', monospace; font-size: 11px; color: var(--green); width: 80px; flex-shrink: 0; padding-top: 2px; }
+  .tl-content h4 { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 4px; }
+  .tl-content p { font-size: 12px; color: var(--dim); }
+  .callout { border: 1px solid var(--green); background: rgba(57, 255, 20, 0.04); padding: 20px 24px; margin-top: 20px; }
+  .callout p { font-size: 15px; line-height: 1.6; }
+  .hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-top: 40px; align-items: start; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .pulse { animation: pulse 2s infinite; }
+  .slide { padding-top: 68px; padding-bottom: 76px; }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <span>PROJECT SPIDERLINK // TFN v1.0</span>
+  <span class="classify">СЛУЖБОВА ІНФОРМАЦІЯ</span>
+  <span class="status pulse">● SYSTEM ACTIVE</span>
+</div>
+<div class="slides">
+
+<div class="slide active" id="slide-1">
+  <div class="label">// Тактична оптоволоконна мережа</div>
+  <h1>SPIDER<span>LINK</span></h1>
+  <p style="font-size:18px; color: var(--dim); font-weight:300; margin-bottom:32px; max-width:640px; line-height:1.6;">Прихована мережа зв'язку та сенсорного поля<br>на базі відпрацьованого волокна FPV-дронів.<br><span class="accent">Zero RF. Zero Detection. Full ISR.</span></p>
+  <div class="grid-4" style="max-width:720px;">
+    <div class="card"><span class="card-num">0%</span><span class="card-label">RF-випромінювання</span></div>
+    <div class="card"><span class="card-num">∞</span><span class="card-label">Імунітет до РЕБ</span></div>
+    <div class="card amber"><span class="card-num amber">$0</span><span class="card-label">Вартість кабелю</span></div>
+    <div class="card"><span class="card-num">20+</span><span class="card-label">км від ЛБС</span></div>
+  </div>
+</div>
+
+<div class="slide" id="slide-2">
+  <div class="label">// Проблема</div>
+  <h2>RF-зв'язок <span style="color:var(--red)">вбиває операторів</span></h2>
+  <div class="grid-3" style="margin-top:8px;">
+    <div class="card red"><span class="card-num" style="color:var(--red)">3–5с</span><span class="card-label">до виявлення РЕР</span><p class="card-desc">Будь-яке радіовипромінювання засікається противником за секунди</p></div>
+    <div class="card red"><span class="card-num" style="color:var(--red)">0–3км</span><span class="card-label">зона ризику оператора</span><p class="card-desc">FPV-пілот змушений працювати поблизу ЛБС, під загрозою ураження</p></div>
+    <div class="card amber"><span class="card-num amber">100%</span><span class="card-label">глушиться РЕБ</span><p class="card-desc">Сучасні РЕБ-комплекси блокують усі стандартні частоти зв'язку</p></div>
+  </div>
+  <div class="callout" style="margin-top:24px;"><p><span class="danger">Щодня</span> на відпрацьованих FPV-дронах залишаються <span class="accent">сотні метрів оптоволокна</span> — матеріал, що вже є в підрозділах і просто викидається.</p></div>
+</div>
+
+<div class="slide" id="slide-3">
+  <div class="label">// Рішення</div>
+  <h2>Кабель стає <span>мережею</span></h2>
+  <div class="hero-grid" style="margin-top:16px; gap:32px;">
+    <div><div class="fiber-diagram">┌─────────────────┐
+│   Master Node   │  ← тил, ML
+│   (φ-OTDR)     │
+└────────┬────────┘
+         │ fiber
+   ┌─────┼──────┐
+   │     │      │
+┌──┴──┐ ┌┴───┐ ┌┴────┐
+│ A   │ │ B  │ │ C   │
+│окоп │─│реле│─│ДРГ  │
+└─────┘ └────┘ └─────┘
+  │        │       │
+[кроки] [техн.] [РЕБ]</div>
+    <p style="font-size:12px; color:var(--dim); margin-top:12px;">Топологія mesh 8+ вузлів. Автоматичне відновлення при обриві.</p></div>
+    <div>
+      <div class="progress-row"><span class="progress-label">RF-стелс</span><div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div><span class="progress-val accent">100%</span></div>
+      <div class="progress-row"><span class="progress-label">РЕБ-стійкість</span><div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div><span class="progress-val accent">100%</span></div>
+      <div class="progress-row"><span class="progress-label">DAS виявлення</span><div class="progress-bar"><div class="progress-fill" style="width:85%"></div></div><span class="progress-val">85%</span></div>
+      <div class="progress-row"><span class="progress-label">Mesh-надійність</span><div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div><span class="progress-val">90%</span></div>
+      <div class="progress-row"><span class="progress-label">Готовність</span><div class="progress-bar"><div class="progress-fill amber" style="width:40%"></div></div><span class="progress-val warn">40%</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="slide-4">
+  <div class="label">// Технологія</div>
+  <h2>4 ключові <span>інновації</span></h2>
+  <div class="grid-2" style="margin-top:16px; gap:20px;">
+    <div class="card"><div style="display:flex; gap:16px; align-items:flex-start;"><span style="font-family:'Share Tech Mono',monospace; font-size:28px; color:var(--green); flex-shrink:0;">01</span><div><h3 style="font-size:16px; color:#fff; margin-bottom:8px;">Zero-Emission Communication</h3><p class="card-desc">Абсолютна відсутність RF-випромінювання. РЕР противника не бачить нічого. Оператор у тилу на 20+ км.</p></div></div></div>
+    <div class="card"><div style="display:flex; gap:16px; align-items:flex-start;"><span style="font-family:'Share Tech Mono',monospace; font-size:28px; color:var(--green); flex-shrink:0;">02</span><div><h3 style="font-size:16px; color:#fff; margin-bottom:8px;">Mesh-Redundancy</h3><p class="card-desc">Немає єдиної точки відмови. При обриві — автоматичний перерахунок маршрутів. Мережа живе під артобстрілом.</p></div></div></div>
+    <div class="card amber"><div style="display:flex; gap:16px; align-items:flex-start;"><span style="font-family:'Share Tech Mono',monospace; font-size:28px; color:var(--amber); flex-shrink:0;">03</span><div><h3 style="font-size:16px; color:#fff; margin-bottom:8px;">DAS Sensing</h3><p class="card-desc">Волокно = розподілений акустичний датчик. Виявляє кроки, техніку, артвистріли. Без додаткових сенсорів.</p></div></div></div>
+    <div class="card amber"><div style="display:flex; gap:16px; align-items:flex-start;"><span style="font-family:'Share Tech Mono',monospace; font-size:28px; color:var(--amber); flex-shrink:0;">04</span><div><h3 style="font-size:16px; color:#fff; margin-bottom:8px;">Trophy Intelligence</h3><p class="card-desc">Підключення до обриву ворожого кабелю за 3–5 хв. Їхня лінія стає нашим сенсором.</p></div></div></div>
+  </div>
+</div>
+
+<div class="slide" id="slide-5">
+  <div class="label">// DAS — Акустична розвідка</div>
+  <h2>Що <span>бачить</span> волокно</h2>
+  <table style="margin-top:16px;">
+    <thead><tr><th>Ціль</th><th>Дальність</th><th>Локалізація</th><th>Частота</th><th>Класифікація</th></tr></thead>
+    <tbody>
+      <tr><td>Пішохід / ДРГ</td><td>3–10 м</td><td>±2 м</td><td>1–4 Hz</td><td class="td-green">75–85%</td></tr>
+      <tr><td>БТР / БМП</td><td>15–50 м</td><td>±5 м</td><td>10–50 Hz</td><td class="td-green">85–95%</td></tr>
+      <tr><td>Танк</td><td>20–80 м</td><td>±5 м</td><td>8–30 Hz</td><td class="td-green">90–97%</td></tr>
+      <tr><td>Артвистріл</td><td>50–500 м</td><td>±10 м</td><td>Імпульс</td><td class="td-amber">95–99%</td></tr>
+      <tr><td>FPV-дрон</td><td>5–30 м</td><td>±3 м</td><td>80–200 Hz</td><td class="td-green">70–85%</td></tr>
+      <tr><td>Копання</td><td>5–15 м</td><td>±3 м</td><td>2–8 Hz</td><td class="td-green">70–85%</td></tr>
+    </tbody>
+  </table>
+  <div class="callout" style="margin-top:20px;"><p>Волокно вздовж позиції = <span class="accent">пасивна охорона периметру 24/7</span> без оператора поруч.</p></div>
+</div>
+
+<div class="slide" id="slide-6">
+  <div class="label">// Порівняння</div>
+  <h2>SpiderLink vs <span style="color:var(--red)">RF-зв'язок</span></h2>
+  <table style="margin-top:20px;">
+    <thead><tr><th>Параметр</th><th style="color:var(--red)">RF / Радіо</th><th style="color:var(--green)">SpiderLink TFN</th></tr></thead>
+    <tbody>
+      <tr><td>Виявлення РЕР</td><td class="td-red">3–5 секунд</td><td class="td-green">Неможливо (0% RF)</td></tr>
+      <tr><td>РЕБ-стійкість</td><td class="td-red">Глушиться повністю</td><td class="td-green">Абсолютний імунітет</td></tr>
+      <tr><td>Безпека оператора</td><td class="td-red">0–3 км від ЛБС</td><td class="td-green">Тил 20+ км</td></tr>
+      <tr><td>Вартість кабелю</td><td class="td-amber">Окремі витрати</td><td class="td-green">$0 (відпрацьований)</td></tr>
+      <tr><td>Розвідка</td><td class="td-red">Відсутня</td><td class="td-green">DAS + Trophy Intel</td></tr>
+      <tr><td>Польове розгортання</td><td>Хвилини</td><td class="td-green">30 сек / сплайс</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="slide" id="slide-7">
+  <div class="label">// Економіка</div>
+  <h2>Вартість <span>розгортання</span></h2>
+  <div class="grid-2" style="margin-top:20px; align-items:start; gap:32px;">
+    <div>
+      <div class="card" style="margin-bottom:16px;">
+        <span class="card-label">Один вузол мережі</span>
+        <table style="margin-top:8px;">
+          <tr><td>Медіаконвертери</td><td class="td-green" style="text-align:right;">$60–100</td></tr>
+          <tr><td>SFP-модулі</td><td class="td-green" style="text-align:right;">$30–50</td></tr>
+          <tr><td>Механічні сплайси (5 шт)</td><td class="td-green" style="text-align:right;">$50</td></tr>
+          <tr><td>Оптоволокно</td><td class="td-amber" style="text-align:right;">$0</td></tr>
+          <tr style="border-top:1px solid var(--border);"><td style="font-weight:700; color:#fff;">Разом на вузол</td><td class="td-green" style="text-align:right; font-weight:700; font-size:16px;">$140–200</td></tr>
+        </table>
+      </div>
+      <div class="card amber"><span class="card-label">Набір польового сплайсингу</span><p class="card-desc" style="margin-top:8px;">Стриппер ($5) + скол ($15) + 5 сплайсів ($50) = <span class="accent" style="font-size:16px; font-weight:700;">$70</span></p></div>
+    </div>
+    <div>
+      <div class="big-stat" style="padding:40px 0;"><span class="big-num">$700</span><span class="big-label">5-вузлова mesh-мережа</span></div>
+      <div class="big-stat"><span class="big-num" style="color:var(--amber);">$50</span><span class="big-label">Trophy Intelligence kit</span></div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="slide-8">
+  <div class="label">// Статус проекту</div>
+  <h2>Roadmap <span>SpiderLink</span></h2>
+  <div class="grid-2" style="margin-top:16px; gap:32px; align-items:start;">
+    <div>
+      <p style="font-size:11px; letter-spacing:2px; color:var(--green); margin-bottom:12px;">✓ ВИКОНАНО</p>
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-date">Квіт 26</span><div class="tl-content"><h4>Концепція + документація</h4><p>PROPOSAL, ARCHITECTURE, ISR-гайди</p></div></div>
+        <div class="tl-item"><span class="tl-date">Квіт 26</span><div class="tl-content"><h4>Симулятори + тести</h4><p>DAS (11 типів), Mesh, RF-Opto, Trophy — 44 тести</p></div></div>
+      </div>
+    </div>
+    <div>
+      <p style="font-size:11px; letter-spacing:2px; color:var(--amber); margin-bottom:12px;">→ НАСТУПНІ КРОКИ</p>
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-date" style="color:var(--amber);">Трав 26</span><div class="tl-content"><h4>Point-to-point MVP</h4><p>200–500м, 2 вузли, ping + iperf + відео</p></div></div>
+        <div class="tl-item"><span class="tl-date" style="color:var(--amber);">Черв 26</span><div class="tl-content"><h4>Псевдо-DAS MVP</h4><p>П'єзо + ESP32 → fiber → RPi → класифікація</p></div></div>
+        <div class="tl-item"><span class="tl-date" style="color:var(--amber);">Лип 26</span><div class="tl-content"><h4>Повне розгортання</h4><p>5+ вузлів, mesh routing, Trophy Intel</p></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="slide" id="slide-9">
+  <div class="label">// Запит</div>
+  <h2>Що потрібно для <span>старту</span></h2>
+  <div class="grid-3" style="margin-top:20px;">
+    <div class="card"><span class="card-num">01</span><span class="card-label">Дозвіл</span><p class="card-desc">Дозвіл на збір відпрацьованих FPV-кабелів з польових підрозділів</p></div>
+    <div class="card amber"><span class="card-num amber">02</span><span class="card-label">Бюджет</span><p class="card-desc">~$250 на MVP (2 вузли + сплайсинг). $700–1000 на mesh-сітку.</p></div>
+    <div class="card"><span class="card-num">03</span><span class="card-label">Тестовий полігон</span><p class="card-desc">Ділянка 500м для польових випробувань</p></div>
+  </div>
+  <div class="callout" style="margin-top:24px; border-color:var(--amber);">
+    <p style="font-size:16px;"><span class="warn">Результат за 30 днів:</span> робоча мережа без RF, з DAS-розвідкою — зібрана з матеріалу, який зараз <span class="accent">просто викидається</span>.</p>
+  </div>
+</div>
+
+<div class="slide" id="slide-10">
+  <div class="label">// Контакт</div>
+  <h1 style="font-size:48px; margin-bottom:8px;">Project <span>SpiderLink</span></h1>
+  <p class="subtitle" style="margin-bottom:40px;">Відкрита розробка. Код доступний. Концепція перевірена симуляцією.</p>
+  <div class="grid-2" style="max-width:640px; gap:20px;">
+    <div class="card"><span class="card-label">GitHub</span><p class="card-desc" style="font-family:'Share Tech Mono',monospace; font-size:13px; color:var(--green);">github.com/Redrock453/<br>tactical-fiber-network</p></div>
+    <div class="card amber"><span class="card-label">Розробник</span><p class="card-desc">AI-інженер / DevOps<br>ЗСУ<br><span style="color:var(--green); font-family:'Share Tech Mono',monospace;">Redrock453</span></p></div>
+  </div>
+  <div style="margin-top:40px; font-family:'Share Tech Mono',monospace; font-size:12px; color:var(--dim);">MIT License // Квітень 2026 // СЛАВА УКРАЇНІ</div>
+</div>
+
+</div>
+
+<div class="nav">
+  <button class="nav-btn" onclick="prevSlide()">← НАЗАД</button>
+  <div class="nav-dots" id="dots"></div>
+  <span class="slide-num" id="slide-num">1 / 10</span>
+  <button class="nav-btn" onclick="nextSlide()">ДАЛІ →</button>
+</div>
+
+<script>
+const totalSlides = 10; let current = 1;
+const dotsEl = document.getElementById('dots');
+for (let i = 1; i <= totalSlides; i++) { const d = document.createElement('div'); d.className = 'dot' + (i === 1 ? ' active' : ''); d.onclick = () => goTo(i); dotsEl.appendChild(d); }
+function goTo(n) { document.getElementById('slide-' + current).classList.remove('active'); dotsEl.children[current - 1].classList.remove('active'); current = Math.max(1, Math.min(totalSlides, n)); document.getElementById('slide-' + current).classList.add('active'); dotsEl.children[current - 1].classList.add('active'); document.getElementById('slide-num').textContent = current + ' / ' + totalSlides; }
+function nextSlide() { goTo(current + 1); } function prevSlide() { goTo(current - 1); }
+document.addEventListener('keydown', e => { if (e.key === 'ArrowRight' || e.key === 'ArrowDown') nextSlide(); if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') prevSlide(); });
+let tx = 0; document.addEventListener('touchstart', e => tx = e.touches[0].clientX); document.addEventListener('touchend', e => { const dx = tx - e.changedTouches[0].clientX; if (Math.abs(dx) > 50) dx > 0 ? nextSlide() : prevSlide(); });
+</script>
+</body>
+</html>
