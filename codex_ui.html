@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Codex Controller</title>
+<title>TFN Codex Controller</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Unbounded:wght@400;700&display=swap');
 
@@ -231,7 +231,7 @@
 </header>
 
 <div class="input-area">
-  <textarea id="goalInput" placeholder="fix failing tests&#10;add authentication to api.py&#10;refactor database module..."></textarea>
+  <textarea id="goalInput" placeholder="запустити DAS симуляцію&#10;додати обробку помилок&#10;рефакторинг модуля бази даних..."></textarea>
   
   <div class="server-row">
     <input class="server-input" id="serverInput" value="http://localhost:8100" placeholder="http://server:8100">
@@ -248,7 +248,7 @@
 <div class="feed" id="feed">
   <div class="empty-state" id="emptyState">
     <div class="empty-icon">⟳</div>
-    <div class="empty-text">Введи задачу и нажми RUN<br>OpenCode выполнит автономно</div>
+    <div class="empty-text">Введи завдання і натисни RUN<br>OpenCode виконає автономно</div>
   </div>
 </div>
 
@@ -372,7 +372,7 @@ function clearFeed() {
   document.getElementById('feed').innerHTML = `
     <div class="empty-state" id="emptyState">
       <div class="empty-icon">⟳</div>
-      <div class="empty-text">Введи задачу и нажми RUN<br>OpenCode выполнит автономно</div>
+    <div class="empty-text">Введи завдання і натисни RUN<br>OpenCode виконає автономно</div>
     </div>`;
   stepsCount = 0;
 }

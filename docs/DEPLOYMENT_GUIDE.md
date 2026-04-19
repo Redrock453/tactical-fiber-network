@@ -1,15 +1,15 @@
-# TFN Deployment Guide
+# Керівництво з розгортання TFN
 
-## Quick Deploy (15 minutes)
+## Швидке розгортання (15 хвилин)
 
-### Prerequisites
+### Передумови
 
-- 2+ devices with Ethernet + SFP or USB-SFP adapter
-- Spent FPV fiber cable (1-10 km)
-- Mechanical splices + quick connectors
-- Basic tool kit (stripper + cleaver)
+- 2+ пристрої з Ethernet + SFP або USB-SFP адаптером
+- FPV оптоволоконний кабель (1–10 км)
+- Механічні з'єднувачі + швидкі конектори
+- Базовий набір інструментів (стриpper + кливер)
 
-### Step 1: Prepare Fiber (5 min)
+### Крок 1: Підготовка волокна (5 хв)
 
 ```
 1. Find clean section of fiber (trim damaged ends)
@@ -19,20 +19,20 @@
 5. Install quick SC connector on each end
 ```
 
-### Step 2: Connect Nodes (5 min)
+### Крок 2: Підключення вузлів (5 хв)
 
 ```
 Node A:                              Node B:
 [Quick SC] → patch cable → SFP  ←→  SFP ← patch cable ← [Quick SC]
-                ↕                                   ↕
-          Media converter                     Media converter
-                ↕                                   ↕
-           Raspberry Pi                        Raspberry Pi
-                ↕                                   ↕
-          Ethernet switch                    Ethernet switch
+                 ↕                                   ↕
+           Media converter                     Media converter
+                 ↕                                   ↕
+            Raspberry Pi                        Raspberry Pi
+                 ↕                                   ↕
+           Ethernet switch                    Ethernet switch
 ```
 
-### Step 3: Configure (5 min)
+### Крок 3: Налаштування (5 хв)
 
 ```bash
 # On both nodes:
@@ -46,7 +46,7 @@ ethtool -m eth0 | grep "Rx optical power"
 # Should show: -15 to -25 dBm
 ```
 
-### Step 4: Verify
+### Крок 4: Перевірка
 
 ```bash
 ping 10.10.10.Y  # other node
@@ -55,21 +55,21 @@ iperf3 -c 10.10.10.Y  # bandwidth test
 
 ---
 
-## Mesh Network Deployment (1-2 hours)
+## Розгортання ямережі (1–2 години)
 
-### Planning
+### Планування
 
 ```bash
 python -m calculator.topology_planner
 ```
 
-This generates:
-- Node placement plan
-- Fiber drop instructions
-- Equipment list
-- Cost estimate
+Це генерує:
+- План розміщення вузлів
+- Інструкції з прокладки волокна
+- Перелік обладнання
+- Кошторис витрат
 
-### Node Setup Script
+### Скрипт налаштування вузла
 
 ```bash
 #!/bin/bash
@@ -97,7 +97,7 @@ fi
 python3 /opt/tfn/analytics/mesh_health.py &
 ```
 
-### DAS Node Setup
+### Налаштування вузла DAS
 
 ```bash
 # Connect φ-OTDR to SFP monitor port
@@ -119,7 +119,7 @@ mon = MeshHealthMonitor()
 
 ---
 
-## Docker Deployment (Cloud)
+## Розгортання через Docker (Хмара)
 
 ```bash
 # Build
@@ -139,21 +139,21 @@ docker run -d \
 
 ---
 
-## Monitoring
+## Моніторинг
 
-### Mesh Health
+### Стан ямережі
 
 ```bash
 python3 -m analytics.mesh_health
 ```
 
-### Break Detection
+### Виявлення обривів
 
 ```bash
 python3 -m analytics.break_locator
 ```
 
-### DAS Monitoring
+### Моніторинг DAS
 
 ```bash
 python3 -m calculator.das_analyser --simulate --duration 60
@@ -161,16 +161,16 @@ python3 -m calculator.das_analyser --simulate --duration 60
 
 ---
 
-## Troubleshooting
+## Усунення несправностей
 
-| Problem | Check | Fix |
-|---------|-------|-----|
-| No link | `ethtool eth0` | Check SFP seated, fiber connected |
-| Low RX power | `ethtool -m eth0` | Clean connectors, check splices |
-| High BER | Ping test | Replace degraded splice |
-| Node offline | Battery check | Replace/charge battery |
-| DAS false alarms | Threshold adjust | Lower sensitivity or add ML filter |
+| Проблема | Перевірка | Рішення |
+|----------|-----------|---------|
+| Немає з'єднання | `ethtool eth0` | Перевірте посадку SFP, підключення волокна |
+| Низька потужність RX | `ethtool -m eth0` | Очистіть конектори, перевірте з'єднувачі |
+| Високий BER | Ping тест | Замініть деградований з'єднувач |
+| Вузол офлайн | Перевірка батареї | Замініть/зарядіть батарею |
+| Хибні спрацьовування DAS | Налаштування порогу | Знижте чутливість або додайте ML-фільтр |
 
 ---
 
-*Deployment Guide v2.0*
+*Керівництво з розгортання v2.0*

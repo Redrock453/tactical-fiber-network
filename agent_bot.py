@@ -22,25 +22,25 @@ bot = Bot(token=TELEGRAM_TOKEN)
 dp = Dispatcher()
 openai = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-SYSTEM_PROMPT = f"""Ты — автономный AI-агент разработчика. Работаешь с репозиторием в {WORK_DIR}.
+SYSTEM_PROMPT = f"""Ти — автономний AI-агент розробника. Працюєш з репозиторієм у {WORK_DIR}.
 
-У тебя есть инструмент: OpenCode CLI — выполняет задачи в репозитории (чинит код, пишет тесты, рефакторит).
+У тебе є інструмент: OpenCode CLI — виконує завдання в репозиторії (лагодить код, пише тести, рефакторить).
 
-Когда пользователь даёт задачу — планируй шаги, вызывай OpenCode, анализируй результат, продолжай пока не готово.
-Когда пользователь просто общается — отвечай как ассистент, помни контекст.
+Коли користувач дає завдання — плануй кроки, викликай OpenCode, аналізуй результат, продовжуй поки не готово.
+Коли користувач просто спілкується — відповідай як асистент, пам'ятай контекст.
 
-Отвечай ТОЛЬКО JSON, один из трёх форматов:
+Відповідай ТІЛЬКИ JSON, один з трьох форматів:
 
-Вызов OpenCode:
-{{"action": "opencode", "command": "задача для OpenCode", "reasoning": "почему этот шаг"}}
+Виклик OpenCode:
+{{"action": "opencode", "command": "завдання для OpenCode", "reasoning": "чому цей крок"}}
 
-Обычный ответ:
-{{"action": "reply", "message": "твой ответ пользователю"}}
+Звичайна відповідь:
+{{"action": "reply", "message": "твоя відповідь користувачу"}}
 
-Задача выполнена:
-{{"action": "done", "message": "что было сделано"}}
+Завдання виконано:
+{{"action": "done", "message": "що було зроблено"}}
 
-ТОЛЬКО JSON. Никакого текста вне JSON."""
+ТІЛЬКИ JSON. Ніякого тексту поза JSON."""
 
 
 async def run_opencode(command: str) -> str:
@@ -145,11 +145,11 @@ async def cmd_start(message: Message):
         return
     await message.answer(
         "Codex Agent v2\n\n"
-        "Just write a task - I'll do it.\n"
-        "Remembers conversation context.\n\n"
-        "/stop - stop agent\n"
-        "/clear - reset history\n"
-        "/status - status",
+        "Просто напиши завдання — я виконаю.\n"
+        "Пам'ятає контекст розмови.\n\n"
+        "/stop — зупинити агента\n"
+        "/clear — очистити історію\n"
+        "/status — статус",
         parse_mode="Markdown"
     )
 
@@ -160,7 +160,7 @@ async def cmd_stop(message: Message):
     if not is_allowed(message):
         return
     is_running = False
-    await message.answer("Stopping after current step.")
+    await message.answer("Зупинка після поточного кроку.")
 
 
 @dp.message(Command("clear"))
@@ -169,29 +169,29 @@ async def cmd_clear(message: Message):
     if not is_allowed(message):
         return
     dialog_history = []
-    await message.answer("History cleared.")
+    await message.answer("Історію очищено.")
 
 
 @dp.message(Command("status"))
 async def cmd_status(message: Message):
     if not is_allowed(message):
         return
-    status = "Running" if is_running else "Idle"
+    status = "Працює" if is_running else "Очікує"
     msgs = len([m for m in dialog_history if m["role"] == "user"])
-    await message.answer(f"{status}\nContext messages: {msgs}")
+    await message.answer(f"{status}\nКонтекст: {msgs} повідомлень")
 
 
 @dp.message()
 async def handle_message(message: Message):
     if not is_allowed(message):
-        await message.answer("Access denied.")
+        await message.answer("Доступ заборонено.")
         return
 
     if is_running:
-        await message.answer("Busy. /stop to cancel.")
+        await message.answer("Зайнято. /stop для скасування.")
         return
 
-    thinking = await message.answer("Thinking...")
+    thinking = await message.answer("Думаю...")
 
     await process_message(message.chat.id, message.text)
 

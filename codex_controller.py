@@ -32,27 +32,27 @@ class StepEvent(BaseModel):
     type: str
     content: str
 
-SYSTEM_PROMPT = """Ты — автономный планировщик задач для разработчика.
-Тебе дают ЦЕЛЬ и ИСТОРИЮ выполненных шагов.
-Твоя задача: вернуть СЛЕДУЮЩИЙ конкретный шаг для OpenCode CLI.
+SYSTEM_PROMPT = """Ти — автономний планувальник завдань для розробника.
+Тобі дають ЦІЛЬ та ІСТОРІЮ виконаних кроків.
+Твоє завдання: повернути НАСТУПНИЙ конкретний крок для OpenCode CLI.
 
-Формат ответа (строго JSON):
+Формат відповіді (строго JSON):
 {
-  "command": "конкретная инструкция для OpenCode одной строкой",
-  "reasoning": "почему этот шаг следующий",
+  "command": "конкретна інструкція для OpenCode одним рядком",
+  "reasoning": "чому цей крок наступний",
   "is_done": false
 }
 
-Если цель достигнута — верни is_done: true.
-Команды должны быть конкретными: "fix failing tests in auth.py", "add error handling to api.py", etc.
-НЕ используй расплывчатые команды. Будь точен."""
+Якщо ціль досягнута — поверни is_done: true.
+Команди мають бути конкретними: "fix failing tests in auth.py", "add error handling to api.py" тощо.
+НЕ використовуй розпливчасті команди. Бути точним."""
 
 async def plan_next_step(goal: str, history: list[dict]) -> dict:
     history_text = ""
     for i, h in enumerate(history):
         history_text += f"\nШАГ {i+1}: {h['command']}\nРЕЗУЛЬТАТ: {h['result'][:500]}\n"
     
-    user_msg = f"ЦЕЛЬ: {goal}\n\nИСТОРИЯ:\n{history_text or 'Начало — история пуста.'}"
+    user_msg = f"ЦІЛЬ: {goal}\n\nІСТОРІЯ:\n{history_text or 'Початок — історія порожня.'}"
     
     response = await client.chat.completions.create(
         model="gpt-4o-mini",
@@ -78,12 +78,12 @@ async def run_opencode(command: str, repo_path: str) -> str:
         stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=120)
         output = stdout.decode("utf-8", errors="replace")
         
-        return output.strip() if output.strip() else "Команда выполнена без вывода."
+        return output.strip() if output.strip() else "Команду виконано без виводу."
         
     except asyncio.TimeoutError:
-        return "TIMEOUT: OpenCode не ответил за 120 секунд."
+        return "TIMEOUT: OpenCode не відповів за 120 секунд."
     except FileNotFoundError:
-        return f"ERROR: OpenCode CLI не найден по пути '{OPENCODE_CMD}'. Проверь OPENCODE_CMD."
+        return f"ERROR: OpenCode CLI не знайдено за шляхом '{OPENCODE_CMD}'. Перевір OPENCODE_CMD."
     except Exception as e:
         return f"ERROR: {str(e)}"
 
@@ -92,7 +92,7 @@ async def autonomous_loop(session_id: str, goal: str, repo_path: str):
     session["status"] = "running"
     session["events"].append(StepEvent(
         step=0, type="plan",
-        content=f"🎯 Цель: {goal}\n📁 Репо: {repo_path}"
+        content=f"🎯 Ціль: {goal}\n📁 Репо: {repo_path}"
     ))
     
     history = []
@@ -100,11 +100,11 @@ async def autonomous_loop(session_id: str, goal: str, repo_path: str):
     for step in range(1, MAX_STEPS + 1):
         
         if session.get("cancelled"):
-            session["events"].append(StepEvent(step=step, type="done", content="⛔ Остановлено пользователем."))
+            session["events"].append(StepEvent(step=step, type="done", content="⛔ Зупинено користувачем."))
             session["status"] = "cancelled"
             return
         
-        session["events"].append(StepEvent(step=step, type="plan", content="🧠 Планирую следующий шаг..."))
+        session["events"].append(StepEvent(step=step, type="plan", content="🧠 Планую наступний крок..."))
         
         try:
             plan = await plan_next_step(goal, history)
@@ -115,15 +115,15 @@ async def autonomous_loop(session_id: str, goal: str, repo_path: str):
         
         session["events"].append(StepEvent(
             step=step, type="plan",
-            content=f"📋 Шаг {step}: {plan['command']}\n💭 {plan['reasoning']}"
+            content=f"📋 Крок {step}: {plan['command']}\n💭 {plan['reasoning']}"
         ))
         
         if plan.get("is_done"):
-            session["events"].append(StepEvent(step=step, type="done", content=f"✅ Цель достигнута за {step-1} шагов!"))
+            session["events"].append(StepEvent(step=step, type="done", content=f"✅ Ціль досягнута за {step-1} кроків!"))
             session["status"] = "done"
             return
         
-        session["events"].append(StepEvent(step=step, type="execute", content=f"⚙️ Выполняю: {plan['command']}"))
+        session["events"].append(StepEvent(step=step, type="execute", content=f"⚙️ Виконую: {plan['command']}"))
         
         result = await run_opencode(plan["command"], repo_path)
         
@@ -136,7 +136,7 @@ async def autonomous_loop(session_id: str, goal: str, repo_path: str):
     
     session["events"].append(StepEvent(
         step=MAX_STEPS, type="done",
-        content=f"⚠️ Достигнут лимит {MAX_STEPS} шагов. Останови вручную или увеличь MAX_STEPS."
+        content=f"⚠️ Досягнуто ліміт {MAX_STEPS} кроків. Зупини вручну або збільш MAX_STEPS."
     ))
     session["status"] = "limit_reached"
 

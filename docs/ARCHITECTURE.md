@@ -1,8 +1,8 @@
-# TFN System Architecture
+# Архітектура системи TFN
 
-## Overview
+## Огляд
 
-Tactical Fiber Network (SpiderLink) operates on 3 layers:
+Тактична волоконно-оптична мережа (SpiderLink) працює на 3 рівнях:
 
 ```
 ┌─────────────────────────────────────────────────────┐
@@ -29,42 +29,42 @@ Tactical Fiber Network (SpiderLink) operates on 3 layers:
 
 ---
 
-## Layer 1: Physical
+## Рівень 1: Фізичний
 
-### Fiber Cable
-- Type: Single-mode G.657.A2 (bend-insensitive)
-- Source: Spent FPV drone fiber ($0)
-- Attenuation: 0.35 dB/km @ 1310nm, 0.22 dB/km @ 1550nm
-- Typical lengths: 1-10 km per link
+### Волоконно-оптичний кабель
+- Тип: Одномодовий G.657.A2 (стійкий до вигинів)
+- Джерело: Волокно від відпрацьованих FPV-дронів ($0)
+- Затухання: 0.35 дБ/км @ 1310нм, 0.22 дБ/км @ 1550нм
+- Типова довжина: 1-10 км на лінк
 
-### Nodes
-- **Trench Node**: Basic mesh node in forward position
-- **Relay Node**: Connection point between fiber segments
-- **Base Station**: Main aggregation point with SFP switch
-- **DAS Interrogator**: φ-OTDR equipped node for sensing
+### Вузли
+- **Окопний вузол**: Базовий вузол мережі на передовій позиції
+- **Ретрансляційний вузол**: Точка з'єднання між сегментами волокна
+- **Базова станція**: Головна точка агрегації з SFP-комутатором
+- **Опитувач DAS**: Вузол з обладнанням φ-OTDR для зондування
 
-### Field Splicing
-- Mechanical splices: 30 seconds, 0.1-0.3 dB loss
-- Quick connectors: 60 seconds, 0.2-0.5 dB loss
-- No fusion splicing required in the field
+### Польова сплайка
+- Механічні сплайки: 30 секунд, втрати 0.1-0.3 дБ
+- Швидкі конектори: 60 секунд, втрати 0.2-0.5 дБ
+- Зварювання волокна в польових умовах не потрібне
 
 ---
 
-## Layer 2: Processing
+## Рівень 2: Обробка
 
-### DAS Pipeline
+### Конвеєр DAS
 ```
 Fiber → φ-OTDR → Raw backscatter → High-pass filter → FFT (1024pt)
 → Feature extraction → ML classifier → Alert generation
 ```
 
-### RF-Opto Detection
+### Виявлення RF-Opto
 ```
 Fiber → Phase monitor → Kerr effect analysis → RF source classification
 → Position estimation → Alert generation
 ```
 
-### OTDR Monitoring
+### Моніторинг OTDR
 ```
 Fiber → OTDR pulse → Return trace → Event detection
 → Break/degradation localization → Alert generation
@@ -72,29 +72,29 @@ Fiber → OTDR pulse → Return trace → Event detection
 
 ---
 
-## Layer 3: Intelligence
+## Рівень 3: Інтелект
 
-### ML Classification
-- Input: FFT spectrum (1024 points)
-- Model: 3-layer Conv1D + Dense (12 classes)
-- Inference: 5-50ms on edge hardware
-- Training: Master Node (RTX 4090)
+### ML Класифікація
+- Вхід: FFT спектр (1024 точки)
+- Модель: 3-шаровий Conv1D + Dense (12 класів)
+- Вивід: 5-50мс на крайовому обладнанні
+- Навчання: Master Node (RTX 4090)
 
-### Tactical Map
-- Real-time event overlay
-- Fiber path visualization
-- Node/link health indicators
-- Threat level color coding
+### Тактична карта
+- Накладання подій у реальному часі
+- Візуалізація маршруту волокна
+- Індикатори стану вузлів/лінків
+- Кольорове кодування рівня загрози
 
-### Counter-Battery
-- Artillery fire detection
-- Trajectory estimation
-- Automatic target coordinates
-- <30s from detection to fire mission
+### Контрбатарейна боротьба
+- Виявлення артилерійського вогню
+- Оцінка траєкторії
+- Автоматичні координати цілі
+- <30с від виявлення до вогневого завдання
 
 ---
 
-## Network Architecture
+## Мережева архітектура
 
 ```
 [Master Node (Rear)]
@@ -121,7 +121,7 @@ Fiber → OTDR pulse → Return trace → Event detection
 
 ---
 
-## Data Flow
+## Потік даних
 
 ```
 Sensor Data:
@@ -140,7 +140,7 @@ Commands:
 
 ---
 
-## Security Architecture
+## Архітектура безпеки
 
 ```
 Physical Security:
@@ -162,4 +162,4 @@ Data Security:
 
 ---
 
-*Architecture v2.0*
+*Архітектура v2.0*
