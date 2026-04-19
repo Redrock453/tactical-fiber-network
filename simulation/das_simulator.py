@@ -3,7 +3,7 @@
 TFN DAS (Distributed Acoustic Sensing) Simulator
 ==================================================
 
-Simulates φ-OTDR interrogation of fiber optic cable for:
+Simulates phi-OTDR interrogation of fiber optic cable for:
 - Footstep detection
 - Vehicle detection (wheeled / tracked)
 - Artillery fire detection
@@ -12,6 +12,11 @@ Simulates φ-OTDR interrogation of fiber optic cable for:
 
 Generates realistic synthetic backscatter signals with noise,
 multi-target events, and produces classification reports.
+
+Physics model:
+- Fiber: G.657.A2, alpha = 0.35 dB/km
+- SNR(d) = P_launch - alpha*L - 10*log10(d) - NF
+- Detection: logistic P_detect(SNR) with threshold at 3 dB
 """
 
 import math
@@ -44,19 +49,35 @@ class TargetSignature(Enum):
     DIGGING = "digging"
 
 
+class EnvironmentalCondition(Enum):
+    CLEAR = "clear"
+    LIGHT_WIND = "light_wind"
+    STRONG_WIND = "strong_wind"
+    LIGHT_RAIN = "light_rain"
+    HEAVY_RAIN = "heavy_rain"
+
+
 SIGNATURE_PROFILES = {
     TargetSignature.SILENCE: {
         "freq_range": (0.1, 0.3),
         "amplitude_range": (0.01, 0.05),
         "duration_s": (0.5, 2.0),
         "pattern": "continuous",
+        "harmonics": [],
+        "bandwidth_hz": 0.2,
+        "temporal_pattern": "continuous",
+        "decay_time_s": 0.0,
     },
     TargetSignature.FOOTSTEP_SINGLE: {
-        "freq_range": (1.5, 3.0),
+        "freq_range": (1.0, 4.0),
         "amplitude_range": (0.15, 0.35),
         "duration_s": (0.1, 0.3),
         "pattern": "periodic",
         "period_hz": 2.0,
+        "harmonics": [(2.0, 0.5), (3.0, 0.25)],
+        "bandwidth_hz": 3.0,
+        "temporal_pattern": "periodic",
+        "decay_time_s": 0.15,
     },
     TargetSignature.FOOTSTEP_GROUP: {
         "freq_range": (1.0, 4.0),
@@ -64,55 +85,91 @@ SIGNATURE_PROFILES = {
         "duration_s": (0.15, 0.4),
         "pattern": "periodic",
         "period_hz": 3.5,
+        "harmonics": [(2.0, 0.5), (3.0, 0.25)],
+        "bandwidth_hz": 3.0,
+        "temporal_pattern": "periodic",
+        "decay_time_s": 0.15,
     },
     TargetSignature.WHEELED_VEHICLE: {
-        "freq_range": (8.0, 20.0),
+        "freq_range": (2.0, 50.0),
         "amplitude_range": (0.40, 0.70),
         "duration_s": (1.0, 5.0),
         "pattern": "continuous",
+        "harmonics": [(2.0, 0.6), (3.0, 0.3), (4.0, 0.15)],
+        "bandwidth_hz": 48.0,
+        "temporal_pattern": "continuous",
+        "decay_time_s": 0.0,
     },
     TargetSignature.TRACKED_VEHICLE: {
-        "freq_range": (2.0, 8.0),
+        "freq_range": (8.0, 30.0),
         "amplitude_range": (0.60, 0.90),
         "duration_s": (2.0, 8.0),
         "pattern": "continuous",
+        "harmonics": [(2.0, 0.7), (3.0, 0.5), (4.0, 0.3)],
+        "bandwidth_hz": 82.0,
+        "temporal_pattern": "continuous",
+        "decay_time_s": 0.0,
     },
     TargetSignature.ARTILLERY_FIRE: {
-        "freq_range": (0.5, 3.0),
+        "freq_range": (0.0, 500.0),
         "amplitude_range": (0.85, 1.0),
         "duration_s": (0.05, 0.2),
         "pattern": "impulse",
+        "harmonics": [(2.0, 0.8), (3.0, 0.6), (5.0, 0.3)],
+        "bandwidth_hz": 500.0,
+        "temporal_pattern": "impulse",
+        "decay_time_s": 0.05,
     },
     TargetSignature.EXPLOSION: {
         "freq_range": (0.1, 15.0),
         "amplitude_range": (0.90, 1.0),
         "duration_s": (0.3, 1.5),
         "pattern": "impulse",
+        "harmonics": [(2.0, 0.7), (3.0, 0.4)],
+        "bandwidth_hz": 15.0,
+        "temporal_pattern": "impulse",
+        "decay_time_s": 0.5,
     },
     TargetSignature.DRONE_HOVER: {
-        "freq_range": (40.0, 80.0),
+        "freq_range": (80.0, 200.0),
         "amplitude_range": (0.10, 0.25),
         "duration_s": (5.0, 30.0),
         "pattern": "continuous",
+        "harmonics": [(2.0, 0.8), (3.0, 0.6), (4.0, 0.4)],
+        "bandwidth_hz": 120.0,
+        "temporal_pattern": "continuous",
+        "decay_time_s": 0.0,
     },
     TargetSignature.DRONE_FLYBY: {
-        "freq_range": (30.0, 100.0),
+        "freq_range": (80.0, 200.0),
         "amplitude_range": (0.15, 0.35),
         "duration_s": (2.0, 8.0),
         "pattern": "sweep",
+        "harmonics": [(2.0, 0.8), (3.0, 0.6), (4.0, 0.4)],
+        "bandwidth_hz": 120.0,
+        "temporal_pattern": "sweep",
+        "decay_time_s": 0.0,
     },
     TargetSignature.EW_INTERFERENCE: {
         "freq_range": (100.0, 2000.0),
         "amplitude_range": (0.30, 0.60),
         "duration_s": (1.0, 10.0),
         "pattern": "continuous",
+        "harmonics": [(2.0, 0.5), (3.0, 0.3)],
+        "bandwidth_hz": 1900.0,
+        "temporal_pattern": "continuous",
+        "decay_time_s": 0.0,
     },
     TargetSignature.DIGGING: {
-        "freq_range": (3.0, 12.0),
+        "freq_range": (2.0, 8.0),
         "amplitude_range": (0.20, 0.50),
         "duration_s": (0.2, 1.0),
         "pattern": "periodic",
         "period_hz": 1.5,
+        "harmonics": [(2.0, 0.4), (3.0, 0.2)],
+        "bandwidth_hz": 6.0,
+        "temporal_pattern": "periodic",
+        "decay_time_s": 0.0,
     },
 }
 
@@ -141,7 +198,9 @@ class FiberSegment:
 
 class DASSimulator:
     def __init__(self, fiber_length_m: float = 10000, sample_rate_hz: int = 1000,
-                 spatial_resolution_m: float = 1.0, noise_floor_db: float = -60.0):
+                 spatial_resolution_m: float = 1.0, noise_floor_db: float = -60.0,
+                 launch_power_dbm: float = 0.0, noise_figure_db: float = 5.0,
+                 env_condition: EnvironmentalCondition = EnvironmentalCondition.CLEAR):
         self.fiber_length = fiber_length_m
         self.sample_rate = sample_rate_hz
         self.spatial_resolution = spatial_resolution_m
@@ -150,6 +209,12 @@ class DASSimulator:
         self.segments: list[FiberSegment] = []
         self.detected_events: list[DASEvent] = []
         self.backscatter_data: list[list[float]] = []
+        self.launch_power_dbm = launch_power_dbm
+        self.noise_figure_db = noise_figure_db
+        self.env_condition = env_condition
+        self._fiber_attenuation_db_km = 0.35
+        self._snr_steepness = 0.5
+        self._snr_threshold_db = 3.0
 
     def add_segment(self, segment: FiberSegment):
         self.segments.append(segment)
@@ -165,6 +230,19 @@ class DASSimulator:
                 burial_depth_m=random.uniform(0, 0.3),
                 terrain=terrains[i],
             ))
+
+    def compute_snr(self, position_m: float, target_distance_m: float) -> float:
+        if target_distance_m <= 0.0:
+            target_distance_m = 0.1
+        fiber_length_km = position_m / 1000.0
+        fiber_loss = self._fiber_attenuation_db_km * fiber_length_km
+        geometric_loss = 10.0 * math.log10(target_distance_m)
+        snr = self.launch_power_dbm - fiber_loss - geometric_loss - self.noise_figure_db
+        return snr
+
+    def _compute_detection_probability(self, snr_db: float) -> float:
+        exponent = -self._snr_steepness * (snr_db - self._snr_threshold_db)
+        return 1.0 / (1.0 + math.exp(exponent))
 
     def _generate_backscatter(self) -> list[float]:
         data = []
@@ -195,6 +273,34 @@ class DASSimulator:
 
         return channel_data
 
+    def _inject_environmental_noise(self, channel_data: list[float],
+                                    time_s: float) -> list[float]:
+        cond = self.env_condition
+
+        if cond == EnvironmentalCondition.CLEAR:
+            return channel_data
+
+        for ch in range(len(channel_data)):
+            pos = ch * self.spatial_resolution
+
+            if cond in (EnvironmentalCondition.LIGHT_WIND, EnvironmentalCondition.STRONG_WIND):
+                wind_strength = 0.3 if cond == EnvironmentalCondition.LIGHT_WIND else 1.0
+                wind_freq = random.uniform(0.5, 3.0)
+                wind_noise = wind_strength * random.gauss(0, 0.05) * math.sin(
+                    2 * math.pi * wind_freq * time_s + ch * 0.01
+                )
+                channel_data[ch] += wind_noise
+
+            elif cond in (EnvironmentalCondition.LIGHT_RAIN, EnvironmentalCondition.HEAVY_RAIN):
+                rain_strength = 0.2 if cond == EnvironmentalCondition.LIGHT_RAIN else 0.8
+                rain_freq = random.uniform(10.0, 100.0)
+                rain_noise = rain_strength * random.gauss(0, 0.03) * math.sin(
+                    2 * math.pi * rain_freq * time_s + ch * 0.005
+                )
+                channel_data[ch] += rain_noise
+
+        return channel_data
+
     def _get_terrain_sensitivity(self, channel: int) -> float:
         pos = channel * self.spatial_resolution
         for seg in self.segments:
@@ -212,6 +318,14 @@ class DASSimulator:
 
     def _classify_event(self, amplitude: float, frequency: float,
                         position_m: float) -> tuple[TargetSignature, float, ThreatLevel]:
+        target_distance_m = max(1.0, 10.0 / max(amplitude, 0.01))
+        snr = self.compute_snr(position_m, target_distance_m)
+
+        if snr < -3.0:
+            return TargetSignature.SILENCE, 0.0, ThreatLevel.NONE
+
+        p_detect = self._compute_detection_probability(snr)
+
         best_match = TargetSignature.SILENCE
         best_score = 0.0
 
@@ -229,7 +343,7 @@ class DASSimulator:
                 best_score = score
                 best_match = sig_type
 
-        confidence = min(best_score * 1.2, 0.99)
+        confidence = min(p_detect * best_score * 1.2, 0.99)
 
         threat_map = {
             TargetSignature.SILENCE: ThreatLevel.NONE,
@@ -247,6 +361,82 @@ class DASSimulator:
 
         return best_match, confidence, threat_map.get(best_match, ThreatLevel.NONE)
 
+    def get_false_alarm_rate(self) -> dict:
+        base_rate = {
+            EnvironmentalCondition.CLEAR: {
+                "wind_noise_per_h": 0.0,
+                "rain_noise_per_h": 0.0,
+                "distant_traffic_per_h": 0.5,
+                "total_per_h": 0.5,
+            },
+            EnvironmentalCondition.LIGHT_WIND: {
+                "wind_noise_per_h": 1.0,
+                "rain_noise_per_h": 0.0,
+                "distant_traffic_per_h": 0.5,
+                "total_per_h": 1.5,
+            },
+            EnvironmentalCondition.STRONG_WIND: {
+                "wind_noise_per_h": 5.0,
+                "rain_noise_per_h": 0.0,
+                "distant_traffic_per_h": 0.5,
+                "total_per_h": 5.5,
+            },
+            EnvironmentalCondition.LIGHT_RAIN: {
+                "wind_noise_per_h": 0.0,
+                "rain_noise_per_h": 2.0,
+                "distant_traffic_per_h": 0.5,
+                "total_per_h": 2.5,
+            },
+            EnvironmentalCondition.HEAVY_RAIN: {
+                "wind_noise_per_h": 2.0,
+                "rain_noise_per_h": 8.0,
+                "distant_traffic_per_h": 0.3,
+                "total_per_h": 10.3,
+            },
+        }
+        return base_rate.get(self.env_condition, base_rate[EnvironmentalCondition.CLEAR])
+
+    def _inject_false_alarms(self, events: list[dict], duration_s: float) -> list[dict]:
+        far = self.get_false_alarm_rate()
+        total_rate = far["total_per_h"]
+        expected_count = total_rate * duration_s / 3600.0
+        num_false = int(expected_count)
+        if random.random() < (expected_count - num_false):
+            num_false += 1
+
+        cond = self.env_condition
+
+        for _ in range(num_false):
+            t = random.uniform(0, duration_s)
+            position = random.uniform(100, self.fiber_length - 100)
+
+            if cond in (EnvironmentalCondition.LIGHT_WIND, EnvironmentalCondition.STRONG_WIND):
+                freq = random.uniform(0.5, 3.0)
+                signature = TargetSignature.FOOTSTEP_SINGLE
+                duration = random.uniform(0.5, 2.0)
+                description_extra = "wind"
+            elif cond in (EnvironmentalCondition.LIGHT_RAIN, EnvironmentalCondition.HEAVY_RAIN):
+                freq = random.uniform(10.0, 100.0)
+                signature = TargetSignature.WHEELED_VEHICLE
+                duration = random.uniform(1.0, 3.0)
+                description_extra = "rain"
+            else:
+                freq = random.uniform(2.0, 8.0)
+                signature = TargetSignature.WHEELED_VEHICLE
+                duration = random.uniform(2.0, 5.0)
+                description_extra = "distant_traffic"
+
+            events.append({
+                "time": t,
+                "position": position,
+                "signature": signature,
+                "duration": duration,
+                "false_alarm": True,
+                "false_alarm_source": description_extra,
+            })
+
+        return events
+
     def simulate_scenario(self, duration_s: float = 60.0,
                           events: Optional[list[dict]] = None) -> list[DASEvent]:
         if not self.segments:
@@ -255,12 +445,16 @@ class DASSimulator:
         if events is None:
             events = self._generate_random_events(duration_s)
 
+        events = self._inject_false_alarms(events, duration_s)
+
         self.detected_events.clear()
         num_samples = int(duration_s)
 
         for sample_idx in range(num_samples):
             t = float(sample_idx)
             channel_data = self._generate_backscatter()
+
+            channel_data = self._inject_environmental_noise(channel_data, t)
 
             for event in events:
                 if abs(t - event["time"]) < event.get("duration", 1.0):
@@ -341,6 +535,49 @@ class DASSimulator:
         desc = descs.get(target, f"Unknown at {position:.0f}m")
         return f"[{confidence * 100:.0f}%] {desc}"
 
+    def generate_fft_signature(self, target: TargetSignature, duration_s: float,
+                               sample_rate: int = 1000) -> list[float]:
+        if target == TargetSignature.SILENCE:
+            return [0.0] * int(duration_s * sample_rate)
+
+        profile = SIGNATURE_PROFILES[target]
+        freq_min, freq_max = profile["freq_range"]
+        amp_min, amp_max = profile["amplitude_range"]
+        harmonics = profile.get("harmonics", [])
+        temporal_pattern = profile.get("temporal_pattern", "continuous")
+        decay_time = profile.get("decay_time_s", 0.0)
+        period_hz = profile.get("period_hz", 1.0)
+
+        num_samples = int(duration_s * sample_rate)
+        fundamental_freq = (freq_min + freq_max) / 2.0
+        amplitude = (amp_min + amp_max) / 2.0
+
+        signal = []
+        for i in range(num_samples):
+            t = i / sample_rate
+            sample = 0.0
+
+            sample += amplitude * math.sin(2 * math.pi * fundamental_freq * t)
+
+            for mult, rel_amp in harmonics:
+                harmonic_freq = fundamental_freq * mult
+                sample += amplitude * rel_amp * math.sin(2 * math.pi * harmonic_freq * t)
+
+            if temporal_pattern == "impulse" and decay_time > 0:
+                decay = math.exp(-t / decay_time)
+                sample *= decay
+            elif temporal_pattern == "periodic":
+                envelope = 0.5 + 0.5 * math.sin(2 * math.pi * period_hz * t)
+                sample *= envelope
+            elif temporal_pattern == "sweep":
+                sweep_factor = 0.5 + 0.5 * (t / duration_s)
+                sample *= sweep_factor
+
+            sample += random.gauss(0, 0.02 * amplitude)
+            signal.append(sample)
+
+        return signal
+
     def get_alerts(self, min_threat: ThreatLevel = ThreatLevel.MEDIUM) -> list[dict]:
         threat_order = [ThreatLevel.NONE, ThreatLevel.LOW, ThreatLevel.MEDIUM,
                         ThreatLevel.HIGH, ThreatLevel.CRITICAL]
@@ -391,10 +628,30 @@ def main():
     sim.auto_segment()
 
     print(f"\nFiber: {sim.fiber_length}m, Channels: {sim.num_channels}")
+    print(f"Launch power: {sim.launch_power_dbm} dBm, Noise figure: {sim.noise_figure_db} dB")
     print(f"Segments: {len(sim.segments)}")
     for seg in sim.segments:
         print(f"  {seg.start_m:.0f}-{seg.end_m:.0f}m: {seg.terrain} "
               f"(depth={seg.burial_depth_m:.2f}m, atten={seg.attenuation_db_km:.2f}dB/km)")
+
+    print("\n--- SNR Analysis ---")
+    test_positions = [500, 1000, 2000, 3500, 4500]
+    test_distances = [5, 10, 50, 100, 500]
+    for pos in test_positions:
+        for dist in test_distances:
+            snr = sim.compute_snr(pos, dist)
+            p_det = sim._compute_detection_probability(snr)
+            print(f"  pos={pos:>5}m, dist={dist:>4}m -> SNR={snr:>6.1f}dB, P_detect={p_det:.3f}")
+
+    print("\n--- Environmental Conditions & False Alarm Rates ---")
+    for cond in EnvironmentalCondition:
+        sim.env_condition = cond
+        far = sim.get_false_alarm_rate()
+        print(f"  {cond.value:>12s}: {far['total_per_h']:.1f} false alarms/hour "
+              f"(wind={far['wind_noise_per_h']:.1f}, rain={far['rain_noise_per_h']:.1f}, "
+              f"traffic={far['distant_traffic_per_h']:.1f})")
+
+    sim.env_condition = EnvironmentalCondition.CLEAR
 
     custom_events = [
         {"time": 5, "position": 800, "signature": TargetSignature.FOOTSTEP_GROUP, "duration": 3},
@@ -422,6 +679,18 @@ def main():
     report = sim.generate_report()
     print("\n--- REPORT ---")
     print(json.dumps(report, indent=2))
+
+    print("\n--- FFT Signature Generation ---")
+    for target in [TargetSignature.FOOTSTEP_GROUP, TargetSignature.TRACKED_VEHICLE,
+                   TargetSignature.ARTILLERY_FIRE, TargetSignature.DRONE_HOVER,
+                   TargetSignature.DIGGING]:
+        sig = sim.generate_fft_signature(target, duration_s=0.1, sample_rate=1000)
+        peak = max(abs(s) for s in sig) if sig else 0
+        profile = SIGNATURE_PROFILES[target]
+        print(f"  {target.value:>20s}: {len(sig)} samples, peak={peak:.3f}, "
+              f"bandwidth={profile['bandwidth_hz']:.0f}Hz, "
+              f"pattern={profile['temporal_pattern']}, "
+              f"harmonics={len(profile['harmonics'])}")
 
     print("\n" + "=" * 60)
     print("SIMULATION COMPLETE")

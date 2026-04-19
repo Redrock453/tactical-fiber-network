@@ -6,4 +6,5 @@ sse-starlette
 aiogram
 numpy
 streamlit
+folium
 pyyaml
