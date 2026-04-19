@@ -2,76 +2,56 @@
 
 [![MIT License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://python.org)
-[![Status: Active](https://img.shields.io/badge/status-active-brightgreen.svg)]()
+[![Tests: 75 passed](https://img.shields.io/badge/tests-75%20passed-brightgreen.svg)]()
 
-> **Open-source система розгортання прихованих мереж зв'язку та сенсорних полів на базі відпрацьованого мікро-оптоволокна БПЛА.**
-> Zero-RF emission. DAS sensing. Trophy Intelligence. Mesh redundancy.
+> **Польова система раннього виявлення + прихований зв'язок + підтримка удару.**
+> Побудована на відпрацьованому оптоволоконні БПЛА. Zero-RF. Mesh redundancy. ISR pipeline.
 
 ---
 
-## Quick Start (3 команди)
+## Що це
+
+SpiderLink перетворює **безкоштовний відпрацьований кабель від FPV-дронів** на повноцінну бойову систему:
+
+```
+Сенсор → Edge Node → Fiber Mesh → C2 → Оператор → Дія
+ piezo    класифікація  BATMAN-adv  FastAPI  Browser   FPV/удар
+          SNR + FFT     WireGuard   WebSocket  карта
+```
+
+| Здатність | Як |
+|-----------|-----|
+| **Невидимість** | 0% RF-випромінювання — РЕР не бачить |
+| **Виявлення** | DAS/п'єзо сенсори: кроки, техніка, артилерія, дрони |
+| **Передача** | Fiber: < 1 мс/км, не глушиться РЕБ |
+| **Живучість** | Ring + cross-links, вузли <$200, заміна за 2 хв |
+| **C2** | FastAPI server + тактичний UI для оператора |
+| **Удар** | Система дає сектор + тип цілі → оператор діє |
+
+---
+
+## Quick Start
 
 ```bash
 git clone https://github.com/Redrock453/tactical-fiber-network.git
 cd tactical-fiber-network
 pip install -r requirements.txt
 
-# Запустити демо DAS-симулятора (виявлення цілей)
-python -m simulation.das_simulator
+# DAS симулятор (виявлення 11 типів цілей)
+python3 -m simulation.das_simulator
 
-# Запустити демо mesh-мережі (розгортання + артудар + відновлення)
-python -m simulation.mesh_simulator
+# Mesh симулятор (розгортання + артудар + rerouting)
+python3 -m simulation.mesh_simulator
 
-# Запустити калькулятор оптичного бюджету
-python -m calculator.fiber_budget
+# Оптичний бюджет лінії
+python3 -m calculator.fiber_budget
 
-# Запустити Streamlit дашборд
+# Streamlit дашборд
 streamlit run web/dashboard.py
+
+# Усі тести
+python3 -m pytest tests/ -v
 ```
-
----
-
-## Що робить TFN
-
-Перетворює **«одноразовий» кабель від FPV-дронів** на стійку до РЕБ мережеву інфраструктуру:
-
-```
-                   ┌─────────────┐
-                   │  Master Node │  (тил, ML-аналіз)
-                   │  + φ-OTDR    │
-                   └──────┬──────┘
-                          │ fiber
-          ┌───────────────┼───────────────┐
-          │               │               │
-    ┌─────┴─────┐   ┌─────┴─────┐   ┌─────┴─────┐
-    │  Вузол A  │   │  Вузол B  │   │  Вузол C  │
-    │  (окоп)   │───│  (реле)   │───│  (ДРГ)    │
-    └───────────┘   └───────────┘   └───────────┘
-         │               │               │
-    [DAS: кроки]   [DAS: техніка]  [RF: РЕБ]
-```
-
-### 4 ключові інновації
-
-| # | Інновація | Що дає |
-|---|-----------|--------|
-| 1 | **Zero-Emission Communication** | 0% радіовипромінювання — невидима для РЕР/РТР |
-| 2 | **Mesh-Redundancy** | Немає єдиної точки відмови — працює при обривах |
-| 3 | **DAS Sensing** | Волокно = розподілений акустичний датчик (кроки, техніка, снаряди) |
-| 4 | **Trophy Intelligence** | Підключення до ворожих ліній — їхній кабель стає нашим сенсором |
-
----
-
-## Порівняння з RF-зв'язком
-
-| Параметр | RF-зв'язок | **SpiderLink TFN** |
-|----------|-----------|-------------------|
-| Стелс | Виявляється РЕР за секунди | **0% випромінювання в ефір** |
-| РЕБ-стійкість | Глушиться повністю | **Абсолютний імунітет** |
-| Безпека оператора | 0–3 км від ЛБС | **Тил 20+ км** |
-| Вартість кабелю | Окремі витрати | **$0 (відпрацьований)** |
-| Пропускна здатність | Обмежена | **Необмежена (fiber)** |
-| Розвідка | Відсутня | **DAS + Trophy Intelligence** |
 
 ---
 
@@ -79,230 +59,210 @@ streamlit run web/dashboard.py
 
 ```
 tactical-fiber-network/
-├── README.md                          # Ви тут
-├── PROPOSAL.md                        # Повний опис концепції
-├── battle_demo.py                     # Візуальна демо DAS (ASCII-графіка)
-├── agent_bot.py                       # Telegram-бот керування
-├── codex_controller.py                # FastAPI контролер
-├── codex_ui.html                      # Web UI для контролера
+├── simulation/                    # Симулятори (чистий Python, без numpy)
+│   ├── das_simulator.py           # DAS: SNR, FFT, 11 типів цілей, false alarms
+│   ├── mesh_simulator.py          # Mesh: P_break артилерія, OSPF, battery/solar
+│   └── rf_detector.py             # RF-Opto: пасивна детекція через ефект Керра
 │
-├── simulation/                        # Симулятори
-│   ├── mesh_simulator.py              # Mesh-мережа: розгортання + обриви + маршрутизація
-│   ├── das_simulator.py               # DAS: φ-OTDR + класифікація 11 типів цілей
-│   └── rf_detector.py                 # RF-Opto: пасивна детекція РЕБ/радарів/FPV
+├── sensing/                       # ISR Detection Pipeline
+│   ├── detection_pipeline.py      # Signal → Filter → Features → Classify → Event
+│   └── multi_sensor.py            # Fusion (2+ сенсори), TimeCorrelator, EdgeAutonomy
 │
-├── calculator/                        # Калькулятори
-│   ├── das_analyser.py                # DAS аналізатор (CLI)
-│   ├── fiber_budget.py               # Оптичний бюджет лінії
-│   ├── topology_planner.py           # Планувальник mesh-топології
-│   └── splice_loss_estimator.py      # Оцінка втрат на сплайсах
+├── c2/                            # Command & Control
+│   ├── server.py                  # FastAPI: 9 REST + WebSocket, дедуплікація
+│   └── operator_ui.html           # Тактичний UI: events, tracks, network, system
 │
-├── analytics/                         # Аналітика
-│   ├── signature_analyzer.py          # FFT-аналіз сигнатур
-│   ├── mesh_health.py                # Моніторинг здоров'я mesh-мережі
-│   └── break_locator.py             # Локалізація обривів (OTDR)
+├── calculator/                    # Калькулятори
+│   ├── fiber_budget.py            # Оптичний бюджет (9 SFP, 4 fiber типи)
+│   ├── topology_planner.py        # MST + redundancy
+│   └── splice_loss_estimator.py   # Monte Carlo, 14 методів
 │
-├── web/                               # Web-інтерфейс
-│   └── dashboard.py                  # Streamlit дашборд
+├── analytics/                     # Аналітика
+│   ├── signature_analyzer.py      # FFT-аналіз
+│   ├── mesh_health.py             # Моніторинг mesh
+│   └── break_locator.py           # OTDR локалізація обривів
 │
-├── configs/                           # Конфігурації
-│   ├── mesh_config.yaml              # Конфігурація mesh-мережі
-│   ├── das_config.yaml               # Параметри DAS
-│   └── alert_rules.yaml             # Правила алертів
+├── web/
+│   └── dashboard.py               # Streamlit: folium карта, live sim, survivability
 │
-├── docs/                              # Документація
-│   ├── FIELD_SPLICING_GUIDE.md       # Польове з'єднання волокна за 30 сек
-│   ├── ISR_INTELLIGENCE_GUIDE.md     # Розвідка через TFN (детально)
-│   ├── TROPHY_INTELLIGENCE.md        # Трофейна розвідка (детально)
-│   ├── RF_OPTICAL_HYBRID.md         # RF-Opto гібридна детекція
-│   ├── TEST_PROTOCOL.md             # Протокол тестування
-│   ├── ARCHITECTURE.md              # Архітектура системи
-│   └── DEPLOYMENT_GUIDE.md          # Керівництво з розгортання
+├── architecture/                  # Специфікації вузлів
+│   ├── node.md                    # v0.1: 3 варіанти ($88-232)
+│   ├── node_v2.md                 # v0.2: маскування, thermal, anti-tracing
+│   └── sbc_research.md            # Порівняння 8 SBC плат
 │
-├── hardware/                          # Обладнання
-│   ├── BOM.md                        # Повний список обладнання з цінами
-│   ├── COMPUTE_INFRASTRUCTURE.md     # Обчислювальна інфраструктура
-│   └── CONNECTION_DIAGRAMS.md        # Схеми підключення (Mermaid)
+├── hardware/                      # Обладнання з цінами
+│   ├── BOM.md                     # Повний BOM (AliExpress 2026)
+│   ├── CONNECTION_DIAGRAMS.md     # 7 Mermaid-схем
+│   └── equipment_research.md      # SFP, сплайси, OTDR
 │
-├── theory/                            # Теорія
-│   ├── PHYSICS_MODEL.md             # Фізична модель (формули)
-│   ├── ALGORITHM_FLOW.md            # Алгоритм обробки даних
-│   ├── AUTONOMOUS_STRATEGY.md       # Автономна архітектура
-│   └── CLOUD_STRATEGY.md            # Хмарна обробка
+├── network/                       # Мережева архітектура
+│   ├── mesh.md                    # BATMAN-adv, ring, failover
+│   └── topology.md                # p2p → chain → ring → partial mesh
 │
-├── examples/                          # Приклади
-│   └── generate_datasets.py         # Генератор синтетичних датасетів
+├── docs/                          # Документація
+│   ├── ISR_ARCHITECTURE.md        # 15-вузлова 4-рівнева ISR-архітектура
+│   ├── DETECTION_ACCURACY.md      # 7 кроків від 50% до 85%+ точності
+│   ├── ARCHITECTURE.md            # Загальна архітектура
+│   ├── DEPLOYMENT_GUIDE.md        # Розгортання
+│   ├── FIELD_SPLICING_GUIDE.md    # Сплайсинг за 30 сек
+│   ├── ISR_INTELLIGENCE_GUIDE.md  # ISR-розвідка
+│   ├── TROPHY_INTELLIGENCE.md     # Трофейна розвідка
+│   └── TEST_PROTOCOL.md           # Польовий чекліст
 │
-└── tests/                            # Тести (44 тести, всі проходять)
+├── pitch/
+│   └── spiderlink_pitch.html      # 10-слайдова презентація для командування
+│
+├── configs/                       # YAML конфігурації
+├── tests/                         # 75 тестів (усі зелені)
+├── battle_demo.py                 # ASCII бойовий сценарій (10 фаз)
+└── PROJECT_OVERVIEW.md            # Повний опис проєкту
 ```
 
 ---
 
-## Симулятори (запустити без заліза)
+## ISR Pipeline (детекція → класифікація → дія)
 
-### DAS-симулятор — виявлення цілей
+### Edge Node (sensing/detection_pipeline.py)
 
-```bash
-python -m simulation.das_simulator
+```
+Raw Signal → SignalBuffer → SignalFilter → FeatureExtractor → TargetClassifier → Event JSON
 ```
 
-Виявляє 11 типів цілей за вібраціями волокна:
-пішоходи, техніка (колісна/гусенична), артилерія, вибухи, БПЛА, РЕБ, копання
+| Етап | Що робить |
+|------|-----------|
+| SignalFilter | Low-pass, band-pass, DC removal |
+| FeatureExtractor | RMS, FFT peak, spectral centroid, rhythm score, zero-crossing rate |
+| TargetClassifier | Rule-based (10 типів): footstep, vehicle, drone, artillery, digging... |
+| DetectionPipeline | Об'єднує все, видає стандартизований ISR Event JSON |
 
-### Mesh-симулятор — розгортання та обриви
+### Multi-Sensor Fusion (sensing/multi_sensor.py)
 
-```bash
-python -m simulation.mesh_simulator
-```
+- **2+ сенсори згодні** → confidence +0.2 (буст)
+- **1 сенсор** → confidence -0.1 (штраф)
+- **TimeCorrelator** — трекає рух цілі між сегментами: швидкість, напрям, поведінка
+- **EdgeAutonomy** — якщо C2 відключений: confidence > 0.8 + high threat → локальний alert
 
-Розгортає mesh-мережу з 8 вузлів, симулює артобстріл, переобчислює маршрути.
+### C2 Server (c2/server.py)
 
-### RF-детектор — пасивне виявлення РЕБ
+FastAPI: прийом подій, дедуплікація, трекінг, WebSocket push, strike requests.
 
-```bash
-python -m simulation.rf_detector
-```
+### Operator UI (c2/operator_ui.html)
 
-Моделює виявлення РЕБ-станцій, радарів, FPV-каналів через ефект Керра.
-
-### Калькулятор оптичного бюджету
-
-```bash
-python -m calculator.fiber_budget
-```
-
-Порівнює 6 сценаріїв (ідеальний, польовий, відпрацьоване волокно, екстрений).
-
-### Оцінка втрат сплайсів
-
-```bash
-python -m calculator.splice_loss_estimator
-```
-
-Порівнює всі методи з'єднання + Monte Carlo симуляція надійності.
+Темний тактичний інтерфейс: таблиця подій, треки цілей, стан мережі, audio alert для critical.
 
 ---
 
-## Польове з'єднання волокна (без зварювання!)
+## DAS-симулятор (11 типів цілей)
 
-На фронті **немає зварювального апарата**. Але є:
+| Ціль | Частоти | Загроза |
+|------|---------|---------|
+| Пішохід | 1-4 Hz, гармоніки 2x, 3x | LOW |
+| Група людей | 1-4 Hz, wider | MEDIUM |
+| Колісна техніка | 8-50 Hz | MEDIUM |
+| Гусенична техніка | 8-30 Hz + 60/90 Hz гармоніки | HIGH |
+| Артпостріл | Імпульс 0-500 Hz | CRITICAL |
+| Вибух | 0.1-15 Hz | CRITICAL |
+| Дрон | 80-200 Hz | MEDIUM |
+| РЕБ | 100-2000 Hz | HIGH |
+| Копання | 2-8 Hz, ритмічне | LOW |
 
-| Метод | Час | Втрати | Ціна | Під вогнем |
-|-------|-----|--------|------|-----------|
-| Механічний сплайс (FMS-01) | **30 сек** | 0.1-0.2 дБ | $10 | Так |
-| Швидкий коннектор (SC) | **60 сек** | 0.2-0.3 дБ | $3 | Так |
-| Зварювання (fusion) | 5-15 хв | 0.02 дБ | $2000+ | Ні |
-
-Мінімальний набір для роботи: **стриппер ($5) + сколом ($15) + 5 сплайсів ($50) = $70**
-
-Детальніше: [docs/FIELD_SPLICING_GUIDE.md](docs/FIELD_SPLICING_GUIDE.md)
+Модель SNR: `SNR = P_launch - α·L - 10·log10(d) - NF` з логістичною P_detect.
 
 ---
 
-## Розвідка через TFN
+## Mesh-мережа (під обстрілом)
 
-### DAS-розвідка (акустична)
+Артилерійська модель: `P_break(r) = 1 - exp(-r/R)`, калібри: 82мм (15м), 152мм (30м), РСЗВ (50м).
 
-| Ціль | Дальність від кабелю | Локалізація | Класифікація |
-|------|---------------------|-------------|--------------|
-| Піхотинець | 3-10 м | ±2 м | 75-85% |
-| БТР/БМП | 15-50 м | ±5 м | 85-95% |
-| Танк | 20-80 м | ±5 м | 90-97% |
-| Артпостріл | 50-500 м | ±10 м | 95-99% |
-| Копання | 5-15 м | ±3 м | 70-85% |
+OSPF-подібна маршрутизація: primary + backup (link-disjoint), bandwidth/latency estimation.
 
-### RF-Opto розвідка (пасивна)
+Failover: 3-5 сек (BATMAN-adv типово).
 
-| Джерело | Дальність виявлення | Імовірність |
-|---------|--------------------|-------|
-| РЕБ-станція (1кВт) | 5-50 м | 90-99% |
-| FPV-пульт | 1-15 м | 40-70% |
-| Радар ППО | 50-500 м | 95-99% |
+---
 
-### Трофейна розвідка
+## Порівняння з RF
 
-Підключення до обривка ворожого кабелю за 3-5 хвилин → читання активності на позиціях противника.
-
-Детальніше:
-- [docs/ISR_INTELLIGENCE_GUIDE.md](docs/ISR_INTELLIGENCE_GUIDE.md) — повна розвідувальна система
-- [docs/TROPHY_INTELLIGENCE.md](docs/TROPHY_INTELLIGENCE.md) — трофейна розвідка
+| Параметр | RF-зв'язок | **SpiderLink TFN** |
+|----------|-----------|-------------------|
+| Стелс | Виявляється РЕР за секунди | **0% випромінювання** |
+| РЕБ-стійкість | Глушиться повністю | **Абсолютний імунітет** |
+| Латентність | 2-10 сек | **< 500 мс (sensor → operator)** |
+| Кабель | Купувати | **$0 (відпрацьований БПЛА)** |
+| Розвідка | Немає | **DAS + Trophy Intelligence** |
 
 ---
 
 ## Вартість
 
-### Вузол (Node)
+| Комплект | Ціна | Що дає |
+|----------|------|--------|
+| **MVP 3 дні** (2 вузли + сенсори) | **~$348** | Зв'язок + детекція |
+| **5 вузлів mesh** | **$1,808** | Сектор оборони |
+| **15 вузлів повна ISR** | **$5,130-7,858** | Лінія фронту з C2 |
+| Один вузол (Banana Pi BPI-R3) | **$169-243** | 2× SFP, заміна за 2 хв |
 
-| Компонент | Вартість |
-|-----------|----------|
-| Оптоволокно | **$0** (відпрацьоване) |
-| Медіаконвертери | $60-100 |
-| SFP модулі | $30-50 |
-| Механічні сплайси (5 шт) | $50 |
-| **Разом на вузол** | **$140-200** |
-
-### 5-вузлова mesh-мережа: **$700-1000**
-
-### Обладнання для трофейної розвідки: **$50-100**
-
-Детальніше: [hardware/BOM.md](hardware/BOM.md)
+Детально: [hardware/BOM.md](hardware/BOM.md)
 
 ---
 
-## Web-дашборд
+## Польовий сплайсинг (без зварювання)
 
-```bash
-pip install streamlit
-streamlit run web/dashboard.py
+| Метод | Час | Втрати | Ціна |
+|-------|-----|--------|------|
+| Механічний сплайс (FMS-01) | **30 сек** | 0.1-0.2 дБ | $10 |
+| Швидкий коннектор (SC) | **60 сек** | 0.2-0.3 дБ | $3 |
+| Зварювання | 5-15 хв | 0.02 дБ | $2000+ |
+
+Мінімум для роботи: **стриппер ($5) + скол ($15) + 5 сплайсів ($50) = $70**
+
+Детально: [docs/FIELD_SPLICING_GUIDE.md](docs/FIELD_SPLICING_GUIDE.md)
+
+---
+
+## Тести
+
+```
+75 тестів — усі зелені
+
+test_das_simulator.py      8   DAS: SNR, FFT, terrain, false alarms
+test_mesh_simulator.py     9   Mesh: P_break, OSPF, battery, solar
+test_rf_detector.py        8   RF: Kerr effect, detection sweep
+test_fiber_budget.py       8   Оптичний бюджет
+test_splice_loss.py        6   Сплайси: Monte Carlo
+test_topology.py           5   MST топологія
+test_detection_pipeline.py 16  Pipeline: buffer, filters, features, classify
+test_multi_sensor.py       15  Fusion, tracks, edge autonomy
 ```
 
-Показує:
-- Топологію mesh-мережі
-- DAS-події в реальному часі
-- RF-виявлення
-- Здоров'я вузлів (батарея, втрати)
-- Алерти за пріоритетом
+Запуск: `python3 -m pytest tests/ -v`
 
 ---
 
-## Технічний стек
+## Статус
 
-- **Фізика:** Single-mode fiber (G.657.A2), SFP-модулі (1310/1550nm)
-- **Маршрутизація:** B.A.T.M.A.N. adv / OLSR
-- **Обробка:** Python (NumPy, FFT), ML-класифікація
-- **Візуалізація:** Streamlit
-- **Зв'язок:** FastAPI (SSE), Telegram Bot
-- **Безпека:** WireGuard (ChaCha20-Poly1305)
-- **Розгортання:** Docker, DigitalOcean
-
----
-
-## Статус проекту
-
-- [x] Концепція розроблена та задокументована
-- [x] Специфікація обладнання
-- [x] Калькулятори топології та бюджету лінії
-- [x] DAS-симулятор (11 типів цілей)
-- [x] Mesh-симулятор (розгортання + артобстріл + відновлення)
-- [x] RF-Opto детектор (пасивна детекція РЕБ)
-- [x] Польове керівництво зі з'єднання волокна
-- [x] ISR та Trophy Intelligence документація
-- [x] Streamlit дашборд
-- [x] 44 тести (всі проходять)
-- [ ] Прототип (1 лінія)
-- [ ] Інтеграція φ-OTDR модуля
-- [x] Польові випробування
+- [x] Концепція + документування
+- [x] DAS-симулятор (SNR, FFT, false alarms)
+- [x] Mesh-симулятор (артилерія, OSPF, battery/solar)
+- [x] RF-Opto пасивна детекція
+- [x] Detection Pipeline (filter → features → classify)
+- [x] Multi-Sensor Fusion + Time Correlator
+- [x] C2 Server (FastAPI) + Operator UI
+- [x] Streamlit дашборд з folium картою
+- [x] Специфікація вузла v0.1 + v0.2 (маскування, thermal)
+- [x] Повний BOM з цінами (AliExpress 2026)
+- [x] ISR-архітектура (15 вузлів, 4 рівні)
+- [x] 75 тестів (усі зелені)
+- [ ] Прототип на реальному залізі
+- [x] Польові записи для калібрування
+- [ ] ML-класифікатор (KNN/Random Forest)
 
 ---
 
-## Безпека (Security)
+## Безпека
 
 - Ніколи не комітьте `.env`, токени, ключі
-- Усі ключі зберігайте у змінних оточення
-- Використовуйте WireGuard для всіх віддалених підключень
+- WireGuard на кожному інтерфейсі
 - Див. [SECURITY.md](SECURITY.md)
-
----
 
 ## Contributing
 
@@ -310,11 +270,4 @@ streamlit run web/dashboard.py
 
 ---
 
-## Контакти
-
-**GitHub:** https://github.com/Redrock453  
-**Квітень 2026**
-
----
-
-*Проект поширюється під ліцензією MIT. Використання — на власний ризик.*
+*SpiderLink TFN — Квітень 2026. Ліцензія MIT.*
